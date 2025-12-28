@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mafia.io - Online Multiplayer</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        /* Menu Screen */
+        .menu-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 50px;
+        }
+
+        .menu-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            min-width: 400px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #e94560;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider {
+            margin: 20px 0;
+            color: #8892b0;
+        }
+
+        /* Lobby List */
+        .lobby-list {
+            margin-top: 30px;
+            max-width: 600px;
+        }
+
+        .lobby-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lobby-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #e94560;
+        }
+
+        .lobby-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .lobby-info p {
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+
+        .lobby-code {
+            background: rgba(233, 69, 96, 0.2);
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        /* Lobby Screen */
+        .lobby-screen {
+            display: none;
+        }
+
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .lobby-title h2 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .lobby-code-display {
+            background: rgba(233, 69, 96, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .lobby-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .players-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .player-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .player-host {
+            color: #ffd700;
+            margin-left: 10px;
+        }
+
+        .player-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-ready {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+
+        .status-not-ready {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+
+        .chat-message.system {
+            background: rgba(255, 255, 255, 0.05);
+            color: #8892b0;
+            text-align: center;
+        }
+
+        .chat-message.mafia {
+            background: rgba(233, 69, 96, 0.2);
+            border-left: 3px solid #e94560;
+        }
+
+        .chat-message.public {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-sender {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .chat-input-group input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .chat-input-group button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #e94560;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Game Screen */
+        .game-screen {
+            display: none;
+        }
+
+        .game-header {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .phase-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .phase-display.day {
+            color: #ffd700;
+        }
+
+        .phase-display.night {
+            color: #9c27b0;
+        }
+
+        .role-display {
+            background: rgba(233, 69, 96, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .game-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        .game-players {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .game-player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .game-player-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .game-player-card:hover {
+            border-color: #e94560;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .game-player-card.selected {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.2);
+        }
+
+        .game-player-card.dead {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .game-player-card.dead:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .game-player-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 10px;
+        }
+
+        .game-player-card.dead .game-player-avatar {
+            background: #333;
+        }
+
+        .game-player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .player-votes {
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+
+        /* Action Panel */
+        .action-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-title {
+            font-size: 1.2rem;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .role-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .role-info h4 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .role-info p {
+            color: #8892b0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-role {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .modal-description {
+            color: #8892b0;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            background: rgba(233, 69, 96, 0.9);
+            color: #fff;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .lobby-content,
+            .game-content {
+                grid-template-columns: 1fr;
+            }
+
+            .menu-card {
+                min-width: 100%;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">Mafia.io</h1>
+            <p class="subtitle">The Ultimate Social Deduction Game</p>
+        </header>
+
+        <!-- Menu Screen -->
+        <div class="menu-screen" id="menuScreen">
+            <div class="menu-card">
+                <h2>Welcome to Mafia.io</h2>
+                <p style="color: #8892b0; margin-bottom: 20px;">Enter your name to get started</p>
+                
+                <div class="input-group">
+                    <input type="text" id="playerName" placeholder="Enter your name..." maxlength="15">
+                </div>
+                
+                <button class="btn btn-primary" onclick="enterGame()">Enter Game</button>
+            </div>
+        </div>
+
+        <!-- Lobby Selection Screen -->
+        <div class="menu-screen hidden" id="lobbySelectScreen">
+            <div class="menu-card">
+                <h2>Select a Lobby</h2>
+                
+                <div class="input-group">
+                    <input type="text" id="lobbyCodeInput" placeholder="Enter lobby code..." style="text-transform: uppercase;">
+                </div>
+                
+                <button class="btn btn-primary" onclick="joinLobbyByCode()">Join Lobby</button>
+                
+                <div class="divider">OR</div>
+                
+                <button class="btn btn-secondary" onclick="showCreateLobby()">Create New Lobby</button>
+                
+                <div class="lobby-list" id="publicLobbies">
+                    <h3 style="text-align: center; color: #8892b0;">Loading public lobbies...</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Lobby Modal -->
+        <div class="modal" id="createLobbyModal">
+            <div class="modal-content">
+                <h2 class="modal-title">Create Lobby</h2>
+                
+                <div class="input-group">
+                    <input type="text" id="lobbyNameInput" placeholder="Lobby name..." maxlength="30">
+                </div>
+                
+                <div class="input-group">
+                    <input type="number" id="maxPlayersInput" placeholder="Max players (5-12)" min="5" max="12" value="10">
+                </div>
+                
+                <button class="btn btn-primary" onclick="createLobby()">Create</button>
+                <button class="btn btn-secondary" onclick="hideCreateLobby()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div class="lobby-screen" id="lobbyScreen">
+            <div class="lobby-header">
+                <div class="lobby-title">
+                    <h2 id="lobbyTitle">Lobby Name</h2>
+                    <p style="color: #8892b0;">Share the code with friends!</p>
+                </div>
+                <div class="lobby-code-display" id="lobbyCodeDisplay">XXXXXX</div>
+                <button class="btn btn-secondary" onclick="leaveLobby()">Leave</button>
+                <button class="btn btn-primary hidden" id="startGameBtn" onclick="startGame()">Start Game</button>
+                <button class="btn btn-secondary" id="readyBtn" onclick="toggleReady()">Ready Up</button>
+            </div>
+
+            <div class="lobby-content">
+                <div class="players-section">
+                    <h3 class="section-title">Players</h3>
+                    <div class="player-list" id="lobbyPlayerList"></div>
+                </div>
+
+                <div class="chat-section">
+                    <h3 class="section-title">Chat</h3>
+                    <div class="chat-messages" id="lobbyChat"></div>
+                    <div class="chat-input-group">
+                        <input type="text" id="lobbyChatInput" placeholder="Type a message..." onkeypress="handleChatKeypress(event, 'lobby')">
+                        <button onclick="sendChatMessage('lobby')">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="game-header">
+                <div>
+                    <h2 style="margin-bottom: 5px;">Mafia.io</h2>
+                    <span class="phase-display" id="phaseDisplay">Waiting</span>
+                    <span style="margin-left: 15px; color: #8892b0;" id="dayCount">Day 1</span>
+                </div>
+                <div class="role-display" id="roleDisplay">Villager</div>
+            </div>
+
+            <div class="game-content">
+                <div class="game-players">
+                    <h3 class="section-title">Players</h3>
+                    <div class="game-player-grid" id="gamePlayerGrid"></div>
+                </div>
+
+                <div class="action-panel">
+                    <h3 class="action-title">Your Role</h3>
+                    <div class="role-info" id="roleInfoPanel">
+                        <h4>Villager</h4>
+                        <p>You are a townsperson trying to find and eliminate the mafia members before they take over the town!</p>
+                    </div>
+
+                    <div class="role-info hidden" id="actionPanel">
+                        <h4>Night Action</h4>
+                        <p id="actionDescription">Select a player to perform your action.</p>
+                    </div>
+
+                    <button class="btn btn-secondary hidden" id="skipVoteBtn" onclick="skipVote()">Skip Vote</button>
+                </div>
+
+                <div class="chat-section" style="height: 300px;">
+                    <h3 class="section-title">Chat</h3>
+                    <div class="chat-messages" id="gameChat"></div>
+                    <div class="chat-input-group">
+                        <input type="text" id="gameChatInput" placeholder="Type a message..." onkeypress="handleChatKeypress(event, 'game')">
+                        <button onclick="sendChatMessage('game')">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Reveal Modal -->
+        <div class="modal" id="roleRevealModal">
+            <div class="modal-content">
+                <h2 class="modal-title">Your Role</h2>
+                <div class="modal-role" id="revealRole">Villager</div>
+                <p class="modal-description" id="revealDescription">You are a townsperson trying to find and eliminate the mafia members!</p>
+                <button class="btn btn-primary" onclick="closeRoleReveal()">I'm Ready</button>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div class="modal" id="gameOverModal">
+            <div class="modal-content">
+                <h2 class="modal-title" id="gameOverTitle">Game Over</h2>
+                <div class="modal-role" id="gameOverWinner">Town Wins!</div>
+                <p class="modal-description">Here were all the roles:</p>
+                <div id="gameOverRoles" style="text-align: left; margin: 20px 0;"></div>
+                <button class="btn btn-primary" onclick="backToMenu()">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Socket connection
+        const socket = io();
+
+        // Game state
+        let playerName = '';
+        let currentLobby = null;
+        let myRole = null;
+        let myId = null;
+        let selectedTarget = null;
+
+        // DOM elements
+        const menuScreen = document.getElementById('menuScreen');
+        const lobbySelectScreen = document.getElementById('lobbySelectScreen');
+        const lobbyScreen = document.getElementById('lobbyScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const createLobbyModal = document.getElementById('createLobbyModal');
+        const roleRevealModal = document.getElementById('roleRevealModal');
+        const gameOverModal = document.getElementById('gameOverModal');
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            myId = socket.id;
+            console.log('Connected to server');
+        });
+
+        socket.on('lobbyCreated', (lobby) => {
+            currentLobby = lobby;
+            showLobbyScreen();
+        });
+
+        socket.on('joinedLobby', (lobby) => {
+            currentLobby = lobby;
+            showLobbyScreen();
+        });
+
+        socket.on('lobbyUpdate', (lobby) => {
+            currentLobby = lobby;
+            updateLobbyUI();
+        });
+
+        socket.on('hostChange', ({ newHost }) => {
+            showNotification(`New host: ${newHost}`);
+        });
+
+        socket.on('gameStarted', (lobby) => {
+            currentLobby = lobby;
+            showGameScreen();
+        });
+
+        socket.on('roleReveal', ({ role, players }) => {
+            myRole = role;
+            document.getElementById('revealRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            document.getElementById('roleDisplay').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            
+            const descriptions = {
+                mafia: 'You are part of the mafia! Eliminate townspeople at night without getting caught.',
+                doctor: 'You are the doctor! Protect one player each night from the mafia.',
+                detective: 'You are the detective! Investigate players to find out if they are mafia.',
+                villager: 'You are a townsperson! Find and vote out the mafia members.'
+            };
+            
+            document.getElementById('revealDescription').textContent = descriptions[role];
+            document.getElementById('roleInfoPanel').innerHTML = `
+                <h4>${role.charAt(0).toUpperCase() + role.slice(1)}</h4>
+                <p>${descriptions[role]}</p>
+            `;
+            
+            roleRevealModal.classList.add('active');
+        });
+
+        socket.on('phaseChange', ({ phase, dayCount }) => {
+            document.getElementById('phaseDisplay').textContent = phase.charAt(0).toUpperCase() + phase.slice(1);
+            document.getElementById('phaseDisplay').className = `phase-display ${phase}`;
+            document.getElementById('dayCount').textContent = `Day ${dayCount}`;
+            
+            updateActionPanel(phase);
+        });
+
+        socket.on('nightResult', ({ deaths }) => {
+            if (deaths.length > 0) {
+                showNotification(`${deaths.join(', ')} was killed by the mafia!`);
+                addChatMessage('system', `${deaths.join(', ')} was killed by the mafia!`);
+            } else {
+                showNotification('No one died last night!');
+                addChatMessage('system', 'No one died last night!');
+            }
+            updateGamePlayers();
+        });
+
+        socket.on('playerEliminated', ({ player, role }) => {
+            showNotification(`${player} (${role}) was eliminated!`);
+            addChatMessage('system', `${player} (${role}) was eliminated!`);
+        });
+
+        socket.on('noElimination', () => {
+            showNotification('No one was eliminated due to a tie!');
+            addChatMessage('system', 'No one was eliminated due to a tie!');
+        });
+
+        socket.on('voteUpdate', ({ votes, voteCounts }) => {
+            updateGamePlayers();
+        });
+
+        socket.on('investigationResult', ({ targetId, isMafia }) => {
+            const target = currentLobby.players[targetId];
+            const result = isMafia ? 'MAFIA' : 'NOT MAFIA';
+            showNotification(`${target.name} is ${result}!`);
+        });
+
+        socket.on('gameOver', ({ winner, players }) => {
+            const winnerText = winner === 'town' ? 'TOWN WINS!' : 'MAFIA WINS!';
+            document.getElementById('gameOverWinner').textContent = winnerText;
+            
+            let rolesHtml = '';
+            Object.values(players).forEach(p => {
+                const aliveIcon = p.alive ? '✓' : '✗';
+                rolesHtml += `<p>${aliveIcon} ${p.name}: ${p.role}</p>`;
+            });
+            document.getElementById('gameOverRoles').innerHTML = rolesHtml;
+            
+            gameOverModal.classList.add('active');
+        });
+
+        socket.on('chatMessage', (msg) => {
+            const chatId = msg.type === 'mafia' ? 'gameChat' : 'gameChat';
+            const chat = document.getElementById(chatId);
+            if (chat) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${msg.type === 'mafia' ? 'mafia' : 'public'}`;
+                messageDiv.innerHTML = `
+                    <div class="chat-sender">${msg.name}</div>
+                    <div>${msg.message}</div>
+                `;
+                chat.appendChild(messageDiv);
+                chat.scrollTop = chat.scrollHeight;
+            }
+        });
+
+        socket.on('error', (error) => {
+            showNotification(error);
+        });
+
+        // Game functions
+        function enterGame() {
+            const nameInput = document.getElementById('playerName');
+            playerName = nameInput.value.trim();
+            
+            if (playerName.length < 2) {
+                showNotification('Name must be at least 2 characters');
+                return;
+            }
+            
+            menuScreen.classList.add('hidden');
+            lobbySelectScreen.classList.remove('hidden');
+            
+            fetchPublicLobbies();
+            setInterval(fetchPublicLobbies, 5000);
+        }
+
+        function fetchPublicLobbies() {
+            fetch('/api/lobbies')
+                .then(res => res.json())
+                .then(lobbies => {
+                    const container = document.getElementById('publicLobbies');
+                    
+                    if (lobbies.length === 0) {
+                        container.innerHTML = '<h3 style="text-align: center; color: #8892b0;">No public lobbies available</h3>';
+                        return;
+                    }
+                    
+                    container.innerHTML = lobbies.map(lobby => `
+                        <div class="lobby-item" onclick="joinLobby('${lobby.code}')">
+                            <div class="lobby-info">
+                                <h3>${lobby.name}</h3>
+                                <p>${lobby.players}/${lobby.maxPlayers} players</p>
+                            </div>
+                            <div class="lobby-code">${lobby.code}</div>
+                        </div>
+                    `).join('');
+                })
+                .catch(err => console.error('Error fetching lobbies:', err));
+        }
+
+        function joinLobbyByCode() {
+            const code = document.getElementById('lobbyCodeInput').value.trim().toUpperCase();
+            if (code.length === 6) {
+                joinLobby(code);
+            } else {
+                showNotification('Invalid lobby code');
+            }
+        }
+
+        function joinLobby(code) {
+            socket.emit('joinLobby', { name: playerName, code: code });
+        }
+
+        function showCreateLobby() {
+            createLobbyModal.classList.add('active');
+        }
+
+        function hideCreateLobby() {
+            createLobbyModal.classList.remove('active');
+        }
+
+        function createLobby() {
+            const lobbyName = document.getElementById('lobbyNameInput').value.trim() || `${playerName}'s Lobby`;
+            const maxPlayers = parseInt(document.getElementById('maxPlayersInput').value) || 10;
+            
+            socket.emit('createLobby', { name: lobbyName, maxPlayers: maxPlayers });
+            hideCreateLobby();
+        }
+
+        function showLobbyScreen() {
+            lobbySelectScreen.classList.add('hidden');
+            lobbyScreen.style.display = 'block';
+            document.getElementById('lobbyTitle').textContent = currentLobby.name;
+            document.getElementById('lobbyCodeDisplay').textContent = currentLobby.code;
+            updateLobbyUI();
+        }
+
+        function updateLobbyUI() {
+            if (!currentLobby) return;
+            
+            // Update player list
+            const playerList = document.getElementById('lobbyPlayerList');
+            playerList.innerHTML = Object.values(currentLobby.players).map(player => `
+                <div class="player-card">
+                    <div class="player-info">
+                        <div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <div class="player-name">${player.name}</div>
+                            ${player.id === currentLobby.host ? '<span class="player-host">👑 Host</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="player-status ${player.ready ? 'status-ready' : 'status-not-ready'}">
+                        ${player.ready ? '✓ Ready' : '○ Not Ready'}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update buttons
+            const isHost = currentLobby.host === myId;
+            const amIReady = currentLobby.players[myId]?.ready;
+            
+            document.getElementById('startGameBtn').classList.toggle('hidden', !isHost);
+            document.getElementById('readyBtn').classList.toggle('hidden', isHost);
+            document.getElementById('readyBtn').textContent = amIReady ? 'Cancel Ready' : 'Ready Up';
+        }
+
+        function toggleReady() {
+            socket.emit('toggleReady');
+        }
+
+        function startGame() {
+            socket.emit('startGame');
+        }
+
+        function leaveLobby() {
+            socket.disconnect();
+            location.reload();
+        }
+
+        function showGameScreen() {
+            lobbyScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            updateGamePlayers();
+        }
+
+        function updateGamePlayers() {
+            if (!currentLobby) return;
+            
+            const grid = document.getElementById('gamePlayerGrid');
+            const votes = currentLobby.votes || {};
+            const voteCounts = {};
+            
+            Object.values(votes).forEach(targetId => {
+                if (targetId) {
+                    voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+                }
+            });
+            
+            grid.innerHTML = Object.values(currentLobby.players).map(player => {
+                const voteCount = voteCounts[player.id] || 0;
+                const isSelected = selectedTarget === player.id;
+                return `
+                    <div class="game-player-card ${isSelected ? 'selected' : ''} ${!player.alive ? 'dead' : ''}" 
+                         onclick="${player.alive && player.id !== myId ? `selectTarget('${player.id}')` : ''}">
+                        <div class="game-player-avatar">${player.name.charAt(0).toUpperCase()}</div>
+                        <div class="game-player-name">${player.name}</div>
+                        ${!player.alive ? '<div style="color: #e94560;">DEAD</div>' : ''}
+                        ${currentLobby.phase === 'day' && player.alive ? `<div class="player-votes">${voteCount} votes</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateActionPanel(phase) {
+            const actionPanel = document.getElementById('actionPanel');
+            const skipVoteBtn = document.getElementById('skipVoteBtn');
+            
+            if (phase === 'day') {
+                actionPanel.classList.add('hidden');
+                skipVoteBtn.classList.remove('hidden');
+            } else if (phase === 'night') {
+                if (myRole === 'mafia' || myRole === 'doctor' || myRole === 'detective') {
+                    actionPanel.classList.remove('hidden');
+                    
+                    const actionTexts = {
+                        mafia: 'Select a player to eliminate tonight.',
+                        doctor: 'Select a player to protect tonight.',
+                        detective: 'Select a player to investigate tonight.'
+                    };
+                    
+                    document.getElementById('actionDescription').textContent = actionTexts[myRole];
+                } else {
+                    actionPanel.classList.add('hidden');
+                }
+                skipVoteBtn.classList.add('hidden');
+            }
+            
+            selectedTarget = null;
+            updateGamePlayers();
+        }
+
+        function selectTarget(playerId) {
+            selectedTarget = playerId;
+            
+            if (currentLobby.phase === 'day') {
+                socket.emit('vote', { targetId: playerId });
+            } else if (currentLobby.phase === 'night') {
+                const actions = {
+                    mafia: 'kill',
+                    doctor: 'heal',
+                    detective: 'investigate'
+                };
+                socket.emit('nightAction', { targetId: playerId, action: actions[myRole] });
+            }
+            
+            updateGamePlayers();
+        }
+
+        function skipVote() {
+            socket.emit('skipVote');
+        }
+
+        function sendChatMessage(type) {
+            const inputId = type === 'lobby' ? 'lobbyChatInput' : 'gameChatInput';
+            const input = document.getElementById(inputId);
+            const message = input.value.trim();
+            
+            if (message) {
+                socket.emit('chatMessage', { message });
+                input.value = '';
+            }
+        }
+
+        function handleChatKeypress(event, type) {
+            if (event.key === 'Enter') {
+                sendChatMessage(type);
+            }
+        }
+
+        function addChatMessage(type, message) {
+            const chatId = 'gameChat';
+            const chat = document.getElementById(chatId);
+            if (chat) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message system`;
+                messageDiv.innerHTML = message;
+                chat.appendChild(messageDiv);
+                chat.scrollTop = chat.scrollHeight;
+            }
+        }
+
+        function closeRoleReveal() {
+            roleRevealModal.classList.remove('active');
+        }
+
+        function backToMenu() {
+            gameOverModal.classList.remove('active');
+            location.reload();
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Socket disconnect handling
+        socket.on('disconnect', () => {
+            showNotification('Disconnected from server');
+        });
+    </script>
+</body>
+</html>
