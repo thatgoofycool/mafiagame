@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mafia.io - Online Mafia Game</title>
+    <title>Mafia.io</title>
     <style>
         * {
             margin: 0;
@@ -16,1062 +16,1135 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
-            color: #e4e4e4;
-            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
         }
 
         .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            max-width: 1200px;
+            width: 90%;
+            margin: 20px auto;
         }
 
-        h1 {
-            font-size: 3em;
-            margin-bottom: 30px;
+        .header {
             text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
             background: linear-gradient(45deg, #e94560, #ff6b6b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
         }
 
-        .card {
-            background: rgba(255,255,255,0.05);
+        .header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .login-screen, .lobby-screen, .game-screen {
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 600px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        input {
+        .login-screen {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .input-group input, .input-group select {
             width: 100%;
             padding: 15px;
-            border: 2px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            font-size: 1em;
-            background: rgba(255,255,255,0.1);
-            color: #e4e4e4;
-            margin-bottom: 15px;
-            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+            transition: border-color 0.3s;
         }
 
-        input:focus {
+        .input-group input:focus, .input-group select:focus {
             outline: none;
             border-color: #e94560;
-            background: rgba(255,255,255,0.15);
         }
 
-        input::placeholder {
-            color: rgba(255,255,255,0.5);
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
+        .btn {
+            padding: 15px 40px;
             border: none;
             border-radius: 10px;
-            font-size: 1em;
-            font-weight: 600;
+            font-size: 1.1rem;
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-            margin-bottom: 10px;
+            margin: 5px;
+        }
+
+        .btn-primary {
             background: linear-gradient(45deg, #e94560, #ff6b6b);
             color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
-        button:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
         }
 
-        button:active {
-            transform: translateY(0);
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
 
-        button.secondary {
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.2);
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        button.secondary:hover {
-            background: rgba(255,255,255,0.15);
+        .divider {
+            text-align: center;
+            margin: 30px 0;
+            color: #666;
+        }
+
+        .divider span {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0 20px;
+        }
+
+        .lobbies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .lobby-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .lobby-card:hover {
+            transform: translateY(-5px);
+            border-color: #e94560;
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.2);
+        }
+
+        .lobby-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .lobby-card .lobby-code {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .lobby-card .players-count {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lobby-code-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+            padding: 10px 30px;
+            border-radius: 10px;
+        }
+
+        .players-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px 20px;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-card .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .player-card .player-info {
+            flex: 1;
+        }
+
+        .player-card .player-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .player-card .player-status {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .player-card .ready-badge {
+            background: #4ecdc4;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .chat-messages .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .chat-messages .message .sender {
+            font-weight: bold;
+            color: #e94560;
+            margin-bottom: 3px;
+        }
+
+        .chat-messages .message.mafia-chat {
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+        }
+
+        .chat-input input:focus {
+            outline: none;
             border-color: #e94560;
         }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+        .phase-display {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+
+        .phase-display h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .phase-display .timer {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .role-reveal {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .role-reveal .role-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .role-reveal .role-name {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .role-reveal .role-description {
+            color: #888;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .voting-area {
+            margin-top: 20px;
+        }
+
+        .voting-area .vote-targets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vote-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .vote-btn:hover {
+            background: rgba(233, 69, 96, 0.3);
+            border-color: #e94560;
+        }
+
+        .vote-btn.selected {
+            background: #e94560;
+            border-color: #e94560;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(233, 69, 96, 0.9);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .game-over h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .game-over .winner {
+            font-size: 2rem;
+            color: #4ecdc4;
+            margin-bottom: 30px;
+        }
+
+        .night-action {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .night-action h3 {
+            margin-bottom: 20px;
+        }
+
+        .night-action .action-btn {
+            padding: 15px 30px;
+            margin: 5px;
+            font-size: 1rem;
         }
 
         .hidden {
             display: none !important;
         }
 
-        .screen {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* Lobby specific styles */
-        #lobby-code {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #e94560;
-            text-align: center;
-            margin-bottom: 20px;
-            letter-spacing: 5px;
-            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
-        }
-
-        .player-list {
-            width: 100%;
-            margin: 20px 0;
-        }
-
-        .player-item {
-            background: rgba(255,255,255,0.05);
-            padding: 12px 20px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 3px solid rgba(255,255,255,0.2);
-            transition: all 0.3s;
-        }
-
-        .player-item:hover {
-            background: rgba(255,255,255,0.08);
-            border-left-color: #e94560;
-        }
-
-        .player-item.is-you {
-            background: rgba(233, 69, 96, 0.1);
-            border-left-color: #e94560;
-        }
-
-        .player-name {
-            font-weight: 500;
-        }
-
-        .player-status {
-            font-size: 0.9em;
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-
-        .player-status.ready {
-            background: #2ecc71;
-            color: #000;
-        }
-
-        .player-status.not-ready {
-            background: #e74c3c;
-            color: #fff;
-        }
-
-        /* Role reveal */
-        .role-reveal {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .role-emoji {
-            font-size: 6em;
-            margin-bottom: 20px;
-        }
-
-        .role-name {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #e94560;
-        }
-
-        .role-description {
-            font-size: 1.1em;
-            color: rgba(255,255,255,0.7);
-            max-width: 500px;
-            line-height: 1.6;
-        }
-
-        /* Game phase */
-        .phase-banner {
-            background: linear-gradient(45deg, #e94560, #ff6b6b);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-
-        .phase-banner h2 {
-            font-size: 1.8em;
-            margin-bottom: 5px;
-        }
-
-        .phase-timer {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        /* Vote buttons */
-        .vote-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            width: 100%;
-            margin: 20px 0;
-        }
-
-        .vote-card {
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .vote-card:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: #e94560;
-        }
-
-        .vote-card.selected {
+        .error-message {
             background: rgba(233, 69, 96, 0.2);
-            border-color: #e94560;
-        }
-
-        .vote-card.you-voted {
-            background: rgba(46, 204, 113, 0.2);
-            border-color: #2ecc71;
-        }
-
-        /* Chat */
-        .chat-container {
-            background: rgba(0,0,0,0.3);
-            border-radius: 15px;
-            padding: 15px;
-            width: 100%;
-            max-width: 600px;
-            margin: 20px 0;
-        }
-
-        .chat-messages {
-            height: 200px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            padding: 10px;
-        }
-
-        .chat-message {
-            margin-bottom: 8px;
-            padding: 8px 12px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.05);
-        }
-
-        .chat-message.you {
-            background: rgba(233, 69, 96, 0.2);
-        }
-
-        .chat-message.mafia {
-            background: rgba(233, 69, 96, 0.3);
             border: 1px solid #e94560;
-        }
-
-        .chat-sender {
-            font-weight: 600;
-            color: #e94560;
-        }
-
-        .chat-input-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input-container input {
-            margin-bottom: 0;
-            flex: 1;
-        }
-
-        .chat-input-container button {
-            width: auto;
-            margin-bottom: 0;
-            padding: 15px 25px;
-        }
-
-        /* Public lobbies */
-        .lobby-list {
-            width: 100%;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .lobby-item {
-            background: rgba(255,255,255,0.05);
-            padding: 15px 20px;
+            padding: 15px;
             border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .lobby-item:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: #e94560;
-        }
-
-        .lobby-info h3 {
-            margin-bottom: 5px;
-        }
-
-        .lobby-info p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.9em;
-        }
-
-        .lobby-code {
-            font-family: monospace;
-            font-size: 1.3em;
-            color: #e94560;
-            font-weight: bold;
-        }
-
-        /* Game over */
-        .game-over-screen {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .winner-banner {
-            font-size: 2.5em;
             margin-bottom: 20px;
-            padding: 20px;
-            border-radius: 15px;
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-        }
-
-        .winner-banner.mafia {
-            background: linear-gradient(45deg, #e94560, #c0392b);
-        }
-
-        .all-roles {
-            text-align: left;
-            margin: 30px 0;
-            background: rgba(0,0,0,0.3);
-            padding: 20px;
-            border-radius: 10px;
-            width: 100%;
-        }
-
-        .role-entry {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .role-entry:last-child {
-            border-bottom: none;
-        }
-
-        /* Night action selector */
-        .night-action-container {
             text-align: center;
-            width: 100%;
         }
 
-        .action-description {
-            margin-bottom: 20px;
-            font-size: 1.1em;
-            color: rgba(255,255,255,0.8);
-        }
-
-        /* Status message */
-        .status-message {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            margin: 20px 0;
-            width: 100%;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .waiting {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2em;
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
             }
-            
-            .card {
-                padding: 20px;
+
+            .lobby-header {
+                flex-direction: column;
+                gap: 20px;
             }
-            
-            .role-emoji {
-                font-size: 4em;
-            }
-            
-            .role-name {
-                font-size: 1.8em;
+
+            .players-list {
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🦹 Mafia.io</h1>
-
-        <!-- Main Menu Screen -->
-        <div id="menu-screen" class="screen">
-            <div class="card">
-                <h2>Enter Your Name</h2>
-                <input type="text" id="nickname" placeholder="Your nickname..." maxlength="20">
-                <button onclick="showLobbyOptions()">Continue</button>
-            </div>
-        </div>
-
-        <!-- Lobby Options Screen -->
-        <div id="lobby-options-screen" class="screen hidden">
-            <div class="card">
-                <h2>Create Lobby</h2>
-                <input type="text" id="lobby-name" placeholder="Lobby name (optional)" maxlength="30">
-                <input type="number" id="max-players" placeholder="Max players (5-12)" min="5" max="12" value="8">
-                <button onclick="createLobby()">Create Lobby</button>
+        <!-- Login Screen -->
+        <div id="login-screen" class="login-screen">
+            <div class="header">
+                <h1>🎭 Mafia.io</h1>
+                <p>The classic social deduction game, online</p>
             </div>
             
-            <div class="card">
-                <h2>Join Lobby</h2>
-                <input type="text" id="join-code" placeholder="Enter 4-character lobby code" maxlength="4" style="text-transform: uppercase;">
-                <button class="secondary" onclick="joinLobby()">Join by Code</button>
+            <div class="input-group">
+                <label>Choose your nickname</label>
+                <input type="text" id="nickname" placeholder="Enter your name..." maxlength="15">
             </div>
+            
+            <button class="btn btn-primary" onclick="joinWithNickname()">Enter Game</button>
+            
+            <div class="divider"><span>OR</span></div>
+            
+            <div class="input-group">
+                <label>Join with lobby code</label>
+                <input type="text" id="lobby-code-input" placeholder="Enter 4-character code..." maxlength="4" style="text-transform: uppercase;">
+            </div>
+            
+            <button class="btn btn-secondary" onclick="joinWithCode()">Join Lobby</button>
+        </div>
 
-            <div class="card">
-                <h2>Public Lobbies</h2>
-                <div id="public-lobbies" class="lobby-list">
-                    <p class="waiting">Loading public lobbies...</p>
-                </div>
-                <button class="secondary" onclick="fetchPublicLobbies()">Refresh</button>
+        <!-- Lobby Browser -->
+        <div id="lobby-browser" class="lobby-screen hidden">
+            <div class="header">
+                <h1>🎮 Public Lobbies</h1>
+                <p>Join a game or create your own</p>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px;">
+                <button class="btn btn-primary" onclick="createLobby()">Create New Lobby</button>
+            </div>
+            
+            <div id="lobbies-grid" class="lobbies-grid">
+                <!-- Lobbies will be loaded here -->
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-secondary" onclick="showLoginScreen()">Back</button>
             </div>
         </div>
 
         <!-- Lobby Screen -->
-        <div id="lobby-screen" class="screen hidden">
-            <div class="card">
-                <div id="lobby-code"></div>
-                <div id="lobby-name-display" style="text-align: center; margin-bottom: 15px; font-size: 1.2em;"></div>
-                
-                <div class="player-list" id="player-list">
-                    <!-- Players will be added here -->
+        <div id="lobby-screen" class="lobby-screen hidden">
+            <div class="lobby-header">
+                <div>
+                    <h2>Lobby</h2>
+                    <div class="lobby-code-display" id="lobby-code-display">----</div>
                 </div>
-
-                <button id="ready-btn" onclick="toggleReady()">Not Ready</button>
-                <button id="start-game-btn" class="secondary hidden" onclick="startGame()">Start Game</button>
-                <button class="secondary" onclick="leaveLobby()">Leave Lobby</button>
+                <div>
+                    <span id="players-count-display">0/8</span>
+                    <button class="btn btn-secondary" onclick="copyLobbyCode()">📋 Copy Code</button>
+                    <button class="btn btn-secondary" onclick="leaveLobby()">Leave</button>
+                </div>
             </div>
-
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages"></div>
-                <div class="chat-input-container">
-                    <input type="text" id="chat-input" placeholder="Type a message..." maxlength="200">
-                    <button onclick="sendChatMessage()">Send</button>
+            
+            <div id="players-list" class="players-list">
+                <!-- Players will be listed here -->
+            </div>
+            
+            <button class="btn btn-primary" id="ready-btn" onclick="toggleReady()">Ready</button>
+            
+            <div class="chat-box">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendChat()">
+                    <button class="btn btn-secondary" onclick="sendChat()">Send</button>
                 </div>
             </div>
         </div>
 
         <!-- Role Reveal Screen -->
-        <div id="role-reveal-screen" class="screen hidden">
-            <div class="card role-reveal">
-                <div class="role-emoji" id="role-emoji"></div>
-                <div class="role-name" id="role-name"></div>
-                <div class="role-description" id="role-description"></div>
-                <div id="teammates" style="margin-top: 20px; color: #e94560;"></div>
-                <button onclick="closeRoleReveal()" style="margin-top: 30px;">I Understand</button>
+        <div id="role-reveal-screen" class="game-screen hidden">
+            <div class="role-reveal">
+                <div class="role-icon" id="role-icon">👤</div>
+                <h1 class="role-name" id="role-name">Your Role</h1>
+                <p class="role-description" id="role-description">Role description here</p>
+                <button class="btn btn-primary" onclick="startGamePhase()">Start Game</button>
             </div>
         </div>
 
         <!-- Game Screen -->
-        <div id="game-screen" class="screen hidden">
-            <div class="phase-banner">
+        <div id="game-screen" class="game-screen hidden">
+            <div class="phase-display">
                 <h2 id="phase-name">Day Phase</h2>
-                <div class="phase-timer" id="phase-timer">30s remaining</div>
+                <div class="timer" id="phase-timer">60</div>
+                <p id="phase-description">Discuss and vote!</p>
             </div>
-
-            <div class="status-message" id="game-status-message"></div>
-
-            <!-- Night Action Selector -->
-            <div id="night-action-container" class="card night-action-container hidden">
-                <div class="action-description" id="action-description"></div>
-                <div class="vote-grid" id="night-targets"></div>
-                <button class="secondary hidden" id="confirm-action-btn" onclick="confirmNightAction()">Confirm Action</button>
+            
+            <div id="game-content">
+                <!-- Dynamic game content -->
             </div>
-
-            <!-- Day Voting -->
-            <div id="day-voting-container" class="card hidden">
-                <h3>Vote to Eliminate</h3>
-                <div class="vote-grid" id="vote-targets"></div>
-                <div id="vote-status" style="text-align: center; margin-top: 15px;"></div>
-            </div>
-
-            <!-- Players Alive -->
-            <div class="card">
-                <h3>Players Alive</h3>
-                <div class="player-list" id="alive-players"></div>
-            </div>
-
-            <div class="chat-container">
-                <div class="chat-messages" id="game-chat-messages"></div>
-                <div class="chat-input-container">
-                    <input type="text" id="game-chat-input" placeholder="Type a message..." maxlength="200">
-                    <button onclick="sendGameChatMessage()">Send</button>
+            
+            <div class="chat-box">
+                <div id="game-chat-messages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="game-chat-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendGameChat()">
+                    <button class="btn btn-secondary" onclick="sendGameChat()">Send</button>
                 </div>
             </div>
         </div>
 
         <!-- Game Over Screen -->
-        <div id="game-over-screen" class="screen hidden">
-            <div class="card game-over-screen">
-                <div class="winner-banner" id="winner-banner"></div>
-                
-                <div class="all-roles">
-                    <h3>All Roles Revealed:</h3>
-                    <div id="all-roles-list"></div>
-                </div>
-
-                <button onclick="backToMenu()">Back to Menu</button>
+        <div id="game-over-screen" class="game-screen hidden">
+            <div class="game-over">
+                <h2>Game Over!</h2>
+                <div class="winner" id="winner-display">Townspeople Win!</div>
+                <div id="final-roles"></div>
+                <button class="btn btn-primary" onclick="backToLobby()">Back to Lobby</button>
             </div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-        
-        let gameState = {
-            nickname: '',
-            lobbyId: null,
-            isHost: false,
-            isReady: false,
-            role: null,
-            teammates: [],
-            selectedTarget: null,
-            hasActed: false,
-            hasVoted: false
-        };
+        // Game State
+        let socket;
+        let nickname = '';
+        let lobbyCode = '';
+        let isReady = false;
+        let currentLobby = null;
+        let myRole = null;
+        let phase = 'lobby';
+        let timer = 0;
 
-        const roles = {
-            mafia: {
-                name: 'Mafia',
-                emoji: '🦹',
-                description: 'You are a member of the Mafia! Work with your fellow mafia to eliminate townspeople. Choose a victim each night.',
-                team: 'mafia'
-            },
-            doctor: {
-                name: 'Doctor',
-                emoji: '💊',
-                description: 'You are the Doctor! Choose one player to protect each night. If the mafia targets them, they will survive.',
-                team: 'town'
-            },
-            detective: {
-                name: 'Detective',
-                emoji: '🔍',
-                description: 'You are the Detective! Each night, investigate one player to learn if they are Mafia or innocent.',
-                team: 'town'
-            },
-            villager: {
-                name: 'Villager',
-                emoji: '👤',
-                description: 'You are a Villager! Use your wits and voting power to identify and eliminate the Mafia before they take over the town.',
-                team: 'town'
-            }
-        };
+        // Initialize Socket
+        function initSocket() {
+            socket = io();
 
-        // Socket event listeners
-        socket.on('connect', () => {
-            console.log('Connected to server');
-        });
+            socket.on('connect', () => {
+                console.log('Connected to server');
+            });
 
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-        });
+            socket.on('lobby-joined', (data) => {
+                lobbyCode = data.lobbyCode;
+                currentLobby = data.lobby;
+                showLobbyScreen();
+            });
 
-        socket.on('error', (error) => {
-            alert('Error: ' + error);
-        });
+            socket.on('lobby-updated', (data) => {
+                currentLobby = data;
+                updateLobbyUI();
+            });
 
-        socket.on('lobbyCreated', (lobby) => {
-            gameState.lobbyId = lobby.id;
-            gameState.isHost = true;
-            showScreen('lobby-screen');
-            updateLobbyInfo(lobby);
-        });
+            socket.on('player-joined', (data) => {
+                addChatMessage('System', `${data.nickname} joined the lobby`);
+            });
 
-        socket.on('lobbyJoined', (lobby) => {
-            gameState.lobbyId = lobby.id;
-            gameState.isHost = false;
-            showScreen('lobby-screen');
-            updateLobbyInfo(lobby);
-        });
+            socket.on('player-left', (data) => {
+                addChatMessage('System', `${data.nickname} left the lobby`);
+            });
 
-        socket.on('lobbyUpdated', (lobby) => {
-            if (gameState.lobbyId === lobby.id) {
-                updateLobbyInfo(lobby);
-            }
-        });
+            socket.on('player-ready', (data) => {
+                const player = currentLobby.players.find(p => p.id === data.id);
+                if (player) {
+                    player.isReady = data.isReady;
+                    updateLobbyUI();
+                }
+            });
 
-        socket.on('playerLeft', (data) => {
-            if (gameState.lobbyId === data.lobbyId) {
-                addChatMessage('System', `${data.playerName} left the lobby`, false);
-            }
-        });
+            socket.on('chat-message', (data) => {
+                addChatMessage(data.nickname, data.message);
+            });
 
-        socket.on('gameStarted', (data) => {
-            gameState.role = data.role;
-            gameState.teammates = data.teammates;
-            showRoleReveal();
-        });
+            socket.on('game-started', (data) => {
+                myRole = data.role;
+                showRoleReveal();
+            });
 
-        socket.on('phaseChanged', (phase) => {
-            handlePhaseChange(phase);
-        });
+            socket.on('phase-changed', (data) => {
+                phase = data.phase;
+                timer = data.timeLeft;
+                updatePhaseUI();
+            });
 
-        socket.on('nightAction', (data) => {
-            if (data.role === gameState.role) {
-                const roleName = roles[data.role].name;
-                addGameChatMessage('System', `As the ${roleName}, you targeted ${data.target}. ${data.result || ''}`, false);
-            }
-        });
+            socket.on('game-chat', (data) => {
+                addGameChatMessage(data.nickname, data.message, data.isMafiaChat);
+            });
 
-        socket.on('playerEliminated', (playerName) => {
-            addGameChatMessage('System', `${playerName} was eliminated!`, false);
-        });
+            socket.on('player-voted', (data) => {
+                updateVotingUI();
+            });
 
-        socket.on('playerProtected', () => {
-            addGameChatMessage('System', 'The Doctor saved someone last night!', false);
-        });
+            socket.on('player-eliminated', (data) => {
+                showNotification(`${data.nickname} was eliminated!`);
+            });
 
-        socket.on('voteUpdate', (data) => {
-            updateVoteStatus(data);
-        });
+            socket.on('night-action-result', (data) => {
+                if (data.success) {
+                    showNotification(data.message);
+                }
+            });
 
-        socket.on('chatMessage', (data) => {
-            addChatMessage(data.sender, data.message, data.sender === gameState.nickname);
-        });
+            socket.on('game-over', (data) => {
+                showGameOver(data.winner, data.roles);
+            });
 
-        socket.on('gameChatMessage', (data) => {
-            addGameChatMessage(data.sender, data.message, data.sender === gameState.nickname, data.isMafia);
-        });
+            socket.on('error', (data) => {
+                showNotification(data.message);
+            });
+        }
 
-        socket.on('gameOver', (data) => {
-            showGameOver(data);
-        });
+        // Navigation Functions
+        function showLoginScreen() {
+            hideAllScreens();
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
 
-        // UI Functions
-        function showLobbyOptions() {
-            const nickname = document.getElementById('nickname').value.trim();
-            if (!nickname) {
-                alert('Please enter a nickname!');
-                return;
-            }
-            gameState.nickname = nickname;
-            socket.emit('setNickname', nickname);
-            showScreen('lobby-options-screen');
+        function showLobbyBrowser() {
+            hideAllScreens();
+            document.getElementById('lobby-browser').classList.remove('hidden');
             fetchPublicLobbies();
         }
 
-        async function createLobby() {
-            const name = document.getElementById('lobby-name').value.trim() || gameState.nickname + "'s Lobby";
-            const maxPlayers = parseInt(document.getElementById('max-players').value);
-            
-            if (maxPlayers < 5 || maxPlayers > 12) {
-                alert('Max players must be between 5 and 12!');
-                return;
-            }
-
-            const response = await fetch('/api/lobbies', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, maxPlayers, host: gameState.nickname })
-            });
-
-            if (!response.ok) {
-                alert('Failed to create lobby!');
-                return;
-            }
-
-            const lobby = await response.json();
-            socket.emit('joinLobby', lobby.code);
+        function showLobbyScreen() {
+            hideAllScreens();
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            updateLobbyUI();
         }
 
-        async function joinLobby() {
-            const code = document.getElementById('join-code').value.trim().toUpperCase();
-            if (!code) {
-                alert('Please enter a lobby code!');
-                return;
-            }
+        function showRoleReveal() {
+            hideAllScreens();
+            document.getElementById('role-reveal-screen').classList.remove('hidden');
+            displayRole();
+        }
 
-            const response = await fetch('/api/lobbies/join', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, player: gameState.nickname })
+        function showGameScreen() {
+            hideAllScreens();
+            document.getElementById('game-screen').classList.remove('hidden');
+            updatePhaseUI();
+        }
+
+        function showGameOver(winner, roles) {
+            hideAllScreens();
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('winner-display').textContent = `${winner} Win!`;
+            
+            const rolesHTML = Object.entries(roles).map(([id, role]) => {
+                const player = currentLobby.players.find(p => p.id === id);
+                return `${player.nickname}: ${role}`;
+            }).join('<br>');
+            document.getElementById('final-roles').innerHTML = `<p>${rolesHTML}</p>`;
+        }
+
+        function hideAllScreens() {
+            document.querySelectorAll('.login-screen, .lobby-screen, .game-screen').forEach(el => {
+                el.classList.add('hidden');
             });
+        }
 
-            if (!response.ok) {
-                alert('Failed to join lobby! Make sure the code is correct.');
+        // Lobby Functions
+        async function joinWithNickname() {
+            nickname = document.getElementById('nickname').value.trim();
+            if (!nickname) {
+                showNotification('Please enter a nickname');
+                return;
+            }
+            showLobbyBrowser();
+        }
+
+        async function joinWithCode() {
+            nickname = document.getElementById('nickname').value.trim();
+            const code = document.getElementById('lobby-code-input').value.trim().toUpperCase();
+            
+            if (!nickname) {
+                showNotification('Please enter a nickname first');
+                return;
+            }
+            if (code.length !== 4) {
+                showNotification('Lobby code must be 4 characters');
                 return;
             }
 
-            const lobby = await response.json();
-            socket.emit('joinLobby', code);
+            try {
+                const response = await fetch('/api/lobbies/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, lobbyCode: code })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to join lobby');
+                }
+
+                const data = await response.json();
+                lobbyCode = code;
+                currentLobby = data.lobby;
+                socket = io();
+                setupSocketHandlers();
+                socket.emit('join-lobby', { nickname, lobbyCode: code });
+                showLobbyScreen();
+            } catch (error) {
+                showNotification(error.message);
+            }
+        }
+
+        async function createLobby() {
+            if (!nickname) {
+                showNotification('Please enter a nickname first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/lobbies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        nickname, 
+                        maxPlayers: 8,
+                        isPublic: true 
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to create lobby');
+                }
+
+                const data = await response.json();
+                lobbyCode = data.lobbyCode;
+                currentLobby = data.lobby;
+                socket = io();
+                setupSocketHandlers();
+                socket.emit('join-lobby', { nickname, lobbyCode });
+                showLobbyScreen();
+            } catch (error) {
+                showNotification(error.message);
+            }
         }
 
         async function fetchPublicLobbies() {
             try {
                 const response = await fetch('/api/lobbies');
+                if (!response.ok) throw new Error('Failed to fetch lobbies');
                 const lobbies = await response.json();
-                displayPublicLobbies(lobbies);
+                displayLobbies(lobbies);
             } catch (error) {
                 console.error('Error fetching lobbies:', error);
-                document.getElementById('public-lobbies').innerHTML = '<p>No public lobbies available</p>';
             }
         }
 
-        function displayPublicLobbies(lobbies) {
-            const container = document.getElementById('public-lobbies');
-            
-            if (!lobbies || lobbies.length === 0) {
-                container.innerHTML = '<p>No public lobbies available</p>';
+        function displayLobbies(lobbies) {
+            const grid = document.getElementById('lobbies-grid');
+            grid.innerHTML = '';
+
+            if (lobbies.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #888;">No public lobbies available. Create one!</p>';
                 return;
             }
 
-            container.innerHTML = lobbies.map(lobby => `
-                <div class="lobby-item" onclick="quickJoin('${lobby.code}')">
-                    <div class="lobby-info">
-                        <h3>${escapeHtml(lobby.name)}</h3>
-                        <p>${lobby.players.length}/${lobby.maxPlayers} players</p>
-                    </div>
+            lobbies.forEach(lobby => {
+                const card = document.createElement('div');
+                card.className = 'lobby-card';
+                card.innerHTML = `
+                    <h3>${lobby.name || 'Lobby'}</h3>
                     <div class="lobby-code">${lobby.code}</div>
-                </div>
-            `).join('');
+                    <div class="players-count">👥 ${lobby.players.length}/${lobby.maxPlayers} players</div>
+                `;
+                card.onclick = () => joinLobbyByCode(lobby.code);
+                grid.appendChild(card);
+            });
         }
 
-        function quickJoin(code) {
-            document.getElementById('join-code').value = code;
-            joinLobby();
-        }
+        async function joinLobbyByCode(code) {
+            try {
+                const response = await fetch('/api/lobbies/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, lobbyCode: code })
+                });
 
-        function updateLobbyInfo(lobby) {
-            document.getElementById('lobby-code').textContent = `Code: ${lobby.code}`;
-            document.getElementById('lobby-name-display').textContent = lobby.name;
-            
-            const playerList = document.getElementById('player-list');
-            playerList.innerHTML = lobby.players.map(player => `
-                <div class="player-item ${player.name === gameState.nickname ? 'is-you' : ''}">
-                    <span class="player-name">${escapeHtml(player.name)}</span>
-                    <span class="player-status ${player.ready ? 'ready' : 'not-ready'}">
-                        ${player.ready ? 'Ready' : 'Not Ready'}
-                    </span>
-                </div>
-            `).join('');
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to join lobby');
+                }
 
-            // Show/hide start button for host
-            const startBtn = document.getElementById('start-game-btn');
-            if (gameState.isHost && allPlayersReady(lobby)) {
-                startBtn.classList.remove('hidden');
-            } else {
-                startBtn.classList.add('hidden');
+                const data = await response.json();
+                lobbyCode = code;
+                currentLobby = data.lobby;
+                socket = io();
+                setupSocketHandlers();
+                socket.emit('join-lobby', { nickname, lobbyCode: code });
+                showLobbyScreen();
+            } catch (error) {
+                showNotification(error.message);
             }
         }
 
-        function allPlayersReady(lobby) {
-            return lobby.players.length >= 3 && lobby.players.every(p => p.ready);
+        function updateLobbyUI() {
+            if (!currentLobby) return;
+
+            document.getElementById('lobby-code-display').textContent = currentLobby.code;
+            document.getElementById('players-count-display').textContent = 
+                `${currentLobby.players.length}/${currentLobby.maxPlayers}`;
+
+            const playersList = document.getElementById('players-list');
+            playersList.innerHTML = '';
+
+            currentLobby.players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.innerHTML = `
+                    <div class="avatar">${player.nickname.charAt(0).toUpperCase()}</div>
+                    <div class="player-info">
+                        <div class="player-name">${player.nickname} ${player.id === socket?.id ? '(You)' : ''}</div>
+                        <div class="player-status">
+                            ${player.isReady ? '<span class="ready-badge">READY</span>' : 'Not ready'}
+                        </div>
+                    </div>
+                `;
+                playersList.appendChild(card);
+            });
+
+            updateReadyButton();
         }
 
         function toggleReady() {
-            gameState.isReady = !gameState.isReady;
-            const btn = document.getElementById('ready-btn');
-            btn.textContent = gameState.isReady ? 'Not Ready' : 'Ready';
-            socket.emit('toggleReady', gameState.lobbyId);
+            isReady = !isReady;
+            socket.emit('player-ready', { isReady });
+            updateReadyButton();
         }
 
-        function startGame() {
-            socket.emit('startGame', gameState.lobbyId);
+        function updateReadyButton() {
+            const btn = document.getElementById('ready-btn');
+            if (isReady) {
+                btn.textContent = 'Not Ready';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            } else {
+                btn.textContent = 'Ready';
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-primary');
+            }
         }
 
         function leaveLobby() {
-            socket.emit('leaveLobby', gameState.lobbyId);
-            gameState.lobbyId = null;
-            gameState.isHost = false;
-            gameState.isReady = false;
-            showScreen('lobby-options-screen');
-            fetchPublicLobbies();
+            socket.emit('leave-lobby');
+            showLobbyBrowser();
         }
 
-        function showRoleReveal() {
-            const role = roles[gameState.role];
-            document.getElementById('role-emoji').textContent = role.emoji;
-            document.getElementById('role-name').textContent = role.name;
-            document.getElementById('role-description').textContent = role.description;
-            
-            const teammatesDiv = document.getElementById('teammates');
-            if (gameState.teammates.length > 0) {
-                teammatesDiv.innerHTML = `<p>Your ${gameState.role === 'mafia' ? 'fellow mafia members' : 'teammates'}: ${gameState.teammates.map(t => escapeHtml(t)).join(', ')}</p>`;
-            } else {
-                teammatesDiv.innerHTML = '';
-            }
-
-            showScreen('role-reveal-screen');
+        function copyLobbyCode() {
+            navigator.clipboard.writeText(lobbyCode);
+            showNotification('Lobby code copied to clipboard!');
         }
 
-        function closeRoleReveal() {
-            showScreen('game-screen');
-            document.getElementById('game-chat-messages').innerHTML = '';
-            addGameChatMessage('System', 'The game has begun!', false);
+        // Chat Functions
+        function addChatMessage(sender, message) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            msgDiv.innerHTML = `<div class="sender">${sender}:</div><div>${message}</div>`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        function handlePhaseChange(phase) {
-            document.getElementById('phase-name').textContent = phase.name;
-            
-            const nightActionContainer = document.getElementById('night-action-container');
-            const dayVotingContainer = document.getElementById('day-voting-container');
-            const statusMessage = document.getElementById('game-status-message');
-            
-            nightActionContainer.classList.add('hidden');
-            dayVotingContainer.classList.add('hidden');
-            
-            gameState.hasActed = false;
-            gameState.hasVoted = false;
-
-            if (phase.type === 'night') {
-                if (gameState.role === 'mafia' || gameState.role === 'doctor' || gameState.role === 'detective') {
-                    nightActionContainer.classList.remove('hidden');
-                    showNightTargets(phase.alivePlayers);
-                } else {
-                    statusMessage.textContent = 'Night has fallen. The town sleeps...';
-                }
-            } else if (phase.type === 'day') {
-                dayVotingContainer.classList.remove('hidden');
-                showVoteTargets(phase.alivePlayers);
-                statusMessage.textContent = 'Discuss and vote to eliminate a suspect!';
-            }
-
-            addGameChatMessage('System', `${phase.name} has begun!`, false);
-        }
-
-        function showNightTargets(players) {
-            const actionDescription = document.getElementById('action-description');
-            const targetsContainer = document.getElementById('night-targets');
-            const confirmBtn = document.getElementById('confirm-action-btn');
-            
-            const roleInfo = {
-                mafia: 'Choose a victim to eliminate tonight...',
-                doctor: 'Choose a player to protect tonight...',
-                detective: 'Choose a player to investigate...'
-            };
-            
-            actionDescription.textContent = roleInfo[gameState.role];
-            
-            targetsContainer.innerHTML = players
-                .filter(p => p !== gameState.nickname)
-                .map(player => `
-                    <div class="vote-card" data-player="${escapeHtml(player)}" onclick="selectNightTarget('${escapeHtml(player)}')">
-                        ${escapeHtml(player)}
-                    </div>
-                `).join('');
-            
-            confirmBtn.classList.add('hidden');
-        }
-
-        function selectNightTarget(player) {
-            gameState.selectedTarget = player;
-            document.querySelectorAll('#night-targets .vote-card').forEach(card => {
-                card.classList.remove('selected');
-                if (card.dataset.player === player) {
-                    card.classList.add('selected');
-                }
-            });
-            document.getElementById('confirm-action-btn').classList.remove('hidden');
-        }
-
-        function confirmNightAction() {
-            if (!gameState.selectedTarget) return;
-            socket.emit('nightAction', {
-                lobbyId: gameState.lobbyId,
-                role: gameState.role,
-                target: gameState.selectedTarget
-            });
-            gameState.hasActed = true;
-            document.getElementById('night-action-container').classList.add('hidden');
-            document.getElementById('game-status-message').textContent = `You targeted ${gameState.selectedTarget}. Waiting for others...`;
-        }
-
-        function showVoteTargets(players) {
-            const targetsContainer = document.getElementById('vote-targets');
-            
-            targetsContainer.innerHTML = players
-                .filter(p => p !== gameState.nickname)
-                .map(player => `
-                    <div class="vote-card" data-player="${escapeHtml(player)}" onclick="castVote('${escapeHtml(player)}')">
-                        ${escapeHtml(player)}
-                    </div>
-                `).join('');
-            
-            document.getElementById('vote-status').textContent = 'Select a player to vote for elimination';
-        }
-
-        function castVote(player) {
-            if (gameState.hasVoted) {
-                alert('You have already voted!');
-                return;
-            }
-            
-            socket.emit('vote', {
-                lobbyId: gameState.lobbyId,
-                target: player
-            });
-            gameState.hasVoted = true;
-            gameState.selectedTarget = player;
-            
-            document.querySelectorAll('#vote-targets .vote-card').forEach(card => {
-                if (card.dataset.player === player) {
-                    card.classList.add('you-voted');
-                }
-            });
-            
-            document.getElementById('vote-status').textContent = `You voted for ${player}. Waiting for others...`;
-        }
-
-        function updateVoteStatus(data) {
-            const voteStatus = document.getElementById('vote-status');
-            const totalVotes = Object.values(data.votes).flat().length;
-            voteStatus.textContent = `Votes: ${totalVotes}/${data.totalPlayers}`;
-            
-            // Show vote counts
-            Object.entries(data.votes).forEach(([player, voters]) => {
-                const card = document.querySelector(`#vote-targets .vote-card[data-player="${player}"]`);
-                if (card) {
-                    card.innerHTML = `${escapeHtml(player)}<br><small>${voters.length} votes</small>`;
-                }
-            });
-        }
-
-        function showGameOver(data) {
-            const banner = document.getElementById('winner-banner');
-            banner.textContent = `${data.winner} Wins!`;
-            banner.classList.toggle('mafia', data.winner === 'Mafia');
-            
-            const rolesList = document.getElementById('all-roles-list');
-            rolesList.innerHTML = data.roles.map(r => `
-                <div class="role-entry">
-                    <span>${escapeHtml(r.name)}</span>
-                    <span>${roles[r.role].emoji} ${roles[r.role].name}</span>
-                </div>
-            `).join('');
-            
-            showScreen('game-over-screen');
-        }
-
-        function sendChatMessage() {
+        function sendChat() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
-            if (!message) return;
-            
-            socket.emit('chatMessage', {
-                lobbyId: gameState.lobbyId,
-                message: message
-            });
-            input.value = '';
+            if (message) {
+                socket.emit('chat-message', { message });
+                input.value = '';
+            }
         }
 
-        function sendGameChatMessage() {
+        // Game Functions
+        function displayRole() {
+            const roleInfo = {
+                mafia: { icon: '🦹', name: 'Mafia', description: 'Eliminate townspeople at night without being caught!' },
+                doctor: { icon: '💊', name: 'Doctor', description: 'Protect one player each night from the mafia!' },
+                detective: { icon: '🔍', name: 'Detective', description: 'Investigate players at night to find the mafia!' },
+                villager: { icon: '👤', name: 'Villager', description: 'Work with the town to find and eliminate the mafia!' }
+            };
+
+            const info = roleInfo[myRole];
+            document.getElementById('role-icon').textContent = info.icon;
+            document.getElementById('role-name').textContent = info.name;
+            document.getElementById('role-description').textContent = info.description;
+        }
+
+        function startGamePhase() {
+            showGameScreen();
+        }
+
+        function updatePhaseUI() {
+            const phaseName = document.getElementById('phase-name');
+            const phaseDesc = document.getElementById('phase-description');
+            const gameContent = document.getElementById('game-content');
+
+            switch(phase) {
+                case 'day':
+                    phaseName.textContent = '☀️ Day Phase';
+                    phaseDesc.textContent = 'Discuss and vote to eliminate a suspect!';
+                    showVotingUI();
+                    break;
+                case 'night':
+                    phaseName.textContent = '🌙 Night Phase';
+                    phaseDesc.textContent = 'The town sleeps...';
+                    showNightActionUI();
+                    break;
+            }
+
+            document.getElementById('phase-timer').textContent = timer;
+        }
+
+        function showVotingUI() {
+            const content = document.getElementById('game-content');
+            const alivePlayers = currentLobby.players.filter(p => p.isAlive);
+            const me = alivePlayers.find(p => p.id === socket?.id);
+
+            if (!me || !me.isAlive) {
+                content.innerHTML = '<p>You are dead. Watch the game unfold...</p>';
+                return;
+            }
+
+            let html = '<div class="voting-area"><h3>Vote to Eliminate</h3><div class="vote-targets">';
+            alivePlayers.forEach(player => {
+                html += `<button class="vote-btn" onclick="castVote('${player.id}')" data-id="${player.id}">
+                    ${player.nickname} ${player.id === socket?.id ? '(You)' : ''}
+                </button>`;
+            });
+            html += '</div></div>';
+            content.innerHTML = html;
+        }
+
+        function showNightActionUI() {
+            const content = document.getElementById('game-content');
+
+            if (myRole === 'villager') {
+                content.innerHTML = '<p>😴 You are a villager. Sleep tight...</p>';
+                return;
+            }
+
+            if (myRole === 'mafia') {
+                const alivePlayers = currentLobby.players.filter(p => p.isAlive && p.role !== 'mafia');
+                let html = '<div class="night-action"><h3>🦹 Choose a target to eliminate</h3>';
+                alivePlayers.forEach(player => {
+                    html += `<button class="btn btn-secondary action-btn" onclick="performNightAction('${player.id}')">
+                        ${player.nickname}
+                    </button>`;
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            } else if (myRole === 'doctor') {
+                const alivePlayers = currentLobby.players.filter(p => p.isAlive);
+                let html = '<div class="night-action"><h3>💊 Choose a player to protect</h3>';
+                alivePlayers.forEach(player => {
+                    html += `<button class="btn btn-secondary action-btn" onclick="performNightAction('${player.id}')">
+                        ${player.nickname}
+                    </button>`;
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            } else if (myRole === 'detective') {
+                const alivePlayers = currentLobby.players.filter(p => p.isAlive && p.id !== socket?.id);
+                let html = '<div class="night-action"><h3>🔍 Choose a player to investigate</h3>';
+                alivePlayers.forEach(player => {
+                    html += `<button class="btn btn-secondary action-btn" onclick="performNightAction('${player.id}')">
+                        ${player.nickname}
+                    </button>`;
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            }
+        }
+
+        function castVote(targetId) {
+            document.querySelectorAll('.vote-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelector(`[data-id="${targetId}"]`).classList.add('selected');
+            socket.emit('cast-vote', { targetId });
+        }
+
+        function performNightAction(targetId) {
+            socket.emit('night-action', { targetId, role: myRole });
+        }
+
+        function updateVotingUI() {
+            // Update vote counts if needed
+        }
+
+        function addGameChatMessage(sender, message, isMafiaChat) {
+            const chatBox = document.getElementById('game-chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isMafiaChat ? 'mafia-chat' : ''}`;
+            msgDiv.innerHTML = `<div class="sender">${sender}${isMafiaChat ? ' (Mafia)' : ''}:</div><div>${message}</div>`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendGameChat() {
             const input = document.getElementById('game-chat-input');
             const message = input.value.trim();
-            if (!message) return;
-            
-            socket.emit('gameChatMessage', {
-                lobbyId: gameState.lobbyId,
-                message: message
+            if (message) {
+                const isMafiaChat = (myRole === 'mafia' && phase === 'night');
+                socket.emit('game-chat', { message, isMafiaChat });
+                input.value = '';
+            }
+        }
+
+        function backToLobby() {
+            showLobbyScreen();
+            myRole = null;
+            phase = 'lobby';
+        }
+
+        // Utility Functions
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function setupSocketHandlers() {
+            socket.on('lobby-joined', (data) => {
+                lobbyCode = data.lobbyCode;
+                currentLobby = data.lobby;
+                showLobbyScreen();
             });
-            input.value = '';
-        }
 
-        function addChatMessage(sender, message, isYou) {
-            const container = document.getElementById('chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `chat-message ${isYou ? 'you' : ''}`;
-            msgDiv.innerHTML = `<span class="chat-sender">${escapeHtml(sender)}:</span> ${escapeHtml(message)}`;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function addGameChatMessage(sender, message, isYou, isMafia) {
-            const container = document.getElementById('game-chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `chat-message ${isYou ? 'you' : ''} ${isMafia ? 'mafia' : ''}`;
-            msgDiv.innerHTML = `<span class="chat-sender">${escapeHtml(sender)}:</span> ${escapeHtml(message)}`;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.add('hidden');
+            socket.on('lobby-updated', (data) => {
+                currentLobby = data;
+                updateLobbyUI();
             });
-            document.getElementById(screenId).classList.remove('hidden');
+
+            socket.on('player-joined', (data) => {
+                addChatMessage('System', `${data.nickname} joined the lobby`);
+            });
+
+            socket.on('player-left', (data) => {
+                addChatMessage('System', `${data.nickname} left the lobby`);
+            });
+
+            socket.on('player-ready', (data) => {
+                const player = currentLobby?.players.find(p => p.id === data.id);
+                if (player) {
+                    player.isReady = data.isReady;
+                    updateLobbyUI();
+                }
+            });
+
+            socket.on('chat-message', (data) => {
+                addChatMessage(data.nickname, data.message);
+            });
+
+            socket.on('game-started', (data) => {
+                myRole = data.role;
+                showRoleReveal();
+            });
+
+            socket.on('phase-changed', (data) => {
+                phase = data.phase;
+                timer = data.timeLeft;
+                updatePhaseUI();
+            });
+
+            socket.on('game-chat', (data) => {
+                addGameChatMessage(data.nickname, data.message, data.isMafiaChat);
+            });
+
+            socket.on('player-voted', () => {
+                updateVotingUI();
+            });
+
+            socket.on('player-eliminated', (data) => {
+                showNotification(`${data.nickname} was eliminated!`);
+                if (currentLobby) {
+                    const player = currentLobby.players.find(p => p.id === data.id);
+                    if (player) player.isAlive = false;
+                }
+            });
+
+            socket.on('night-action-result', (data) => {
+                if (data.success) {
+                    showNotification(data.message);
+                }
+            });
+
+            socket.on('game-over', (data) => {
+                showGameOver(data.winner, data.roles);
+            });
+
+            socket.on('error', (data) => {
+                showNotification(data.message);
+            });
         }
 
-        function backToMenu() {
-            gameState.lobbyId = null;
-            gameState.isHost = false;
-            gameState.isReady = false;
-            gameState.role = null;
-            gameState.teammates = [];
-            showScreen('lobby-options-screen');
-            fetchPublicLobbies();
-        }
+        // Timer Update
+        setInterval(() => {
+            if (timer > 0) {
+                timer--;
+                document.getElementById('phase-timer').textContent = timer;
+            }
+        }, 1000);
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Handle Enter key for chat
-        document.getElementById('chat-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendChatMessage();
-        });
-
-        document.getElementById('game-chat-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendGameChatMessage();
-        });
+        // Initialize on page load
+        initSocket();
     </script>
 </body>
 </html>
