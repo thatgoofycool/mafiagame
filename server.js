@@ -1,490 +1,433 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 
-app.use(cors());
-app.use(express.json());
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Game state
-const lobbies = new Map();
-const players = new Map();
+// Serve index.html for root path
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-// Utility functions
+// Game state
+const lobbies = {};
+const players = {};
+const ROLES = ['mafia', 'doctor', 'detective', 'villager'];
+
+// Generate random lobby code
 function generateLobbyCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
-function assignRoles(lobby) {
-  const playerIds = Object.keys(lobby.players);
-  const numPlayers = playerIds.length;
-  const numMafia = Math.floor(numPlayers / 3);
-  const roles = [];
-  
-  // Add mafia
-  for (let i = 0; i < numMafia; i++) {
-    roles.push('mafia');
-  }
-  // Add doctor and detective
-  roles.push('doctor');
-  roles.push('detective');
-  // Rest are villagers
-  while (roles.length < numPlayers) {
-    roles.push('villager');
-  }
-  
-  // Shuffle roles
-  for (let i = roles.length - 1; i > 0; i--) {
+// Shuffle array
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [roles[i], roles[j]] = [roles[j], roles[i]];
+    [array[i], array[j]] = [array[j], array[i]];
   }
-  
-  // Assign roles to players
-  playerIds.forEach((id, index) => {
-    lobby.players[id].role = roles[index];
-    lobby.players[id].alive = true;
-    lobby.players[id].votes = 0;
+  return array;
+}
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Create a new lobby
+  socket.on('createLobby', ({ username, lobbyName, maxPlayers }) => {
+    const lobbyCode = generateLobbyCode();
+    lobbies[lobbyCode] = {
+      code: lobbyCode,
+      name: lobbyName,
+      maxPlayers: maxPlayers,
+      players: [],
+      host: socket.id,
+      phase: 'waiting', // waiting, day, night, ended
+      dayCount: 0,
+      votes: {},
+      mafiaTarget: null,
+      doctorTarget: null,
+      detectiveTarget: null
+    };
+
+    joinLobby(socket, username, lobbyCode);
+    io.to(socket.id).emit('lobbyCreated', { lobbyCode, isHost: true });
   });
+
+  // Join an existing lobby
+  socket.on('joinLobby', ({ username, lobbyCode }) => {
+    if (!lobbies[lobbyCode]) {
+      io.to(socket.id).emit('error', 'Lobby not found');
+      return;
+    }
+
+    const lobby = lobbies[lobbyCode];
+    if (lobby.players.length >= lobby.maxPlayers) {
+      io.to(socket.id).emit('error', 'Lobby is full');
+      return;
+    }
+
+    joinLobby(socket, username, lobbyCode);
+    io.to(socket.id).emit('lobbyJoined', { lobbyCode, isHost: false });
+  });
+
+  // Toggle ready status
+  socket.on('toggleReady', () => {
+    const player = players[socket.id];
+    if (!player || !lobbies[player.lobbyCode]) return;
+
+    const lobby = lobbies[player.lobbyCode];
+    const lobbyPlayer = lobby.players.find(p => p.id === socket.id);
+    if (lobbyPlayer) {
+      lobbyPlayer.ready = !lobbyPlayer.ready;
+      io.to(lobby.code).emit('playerUpdated', lobbyPlayer);
+
+      // Check if all players are ready and start game
+      if (lobby.players.length >= 3 && lobby.players.every(p => p.ready)) {
+        startGame(lobby.code);
+      }
+    }
+  });
+
+  // Chat message
+  socket.on('chatMessage', (message) => {
+    const player = players[socket.id];
+    if (!player || !lobbies[player.lobbyCode]) return;
+
+    const lobby = lobbies[player.lobbyCode];
+    const lobbyPlayer = lobby.players.find(p => p.id === socket.id);
+    
+    const chatMessage = {
+      username: lobbyPlayer.username,
+      message: message,
+      isMafia: lobbyPlayer.role === 'mafia'
+    };
+
+    // During night, mafia can only talk to mafia
+    if (lobby.phase === 'night' && lobbyPlayer.role === 'mafia') {
+      lobby.players.filter(p => p.role === 'mafia').forEach(p => {
+        io.to(p.id).emit('chatMessage', chatMessage);
+      });
+    } else if (lobby.phase !== 'night') {
+      // Public chat during day and waiting
+      io.to(lobby.code).emit('chatMessage', chatMessage);
+    }
+  });
+
+  // Vote for player
+  socket.on('vote', (targetId) => {
+    const player = players[socket.id];
+    if (!player || !lobbies[player.lobbyCode]) return;
+
+    const lobby = lobbies[player.lobbyCode];
+    if (lobby.phase !== 'day') return;
+
+    const lobbyPlayer = lobby.players.find(p => p.id === socket.id);
+    if (!lobbyPlayer || !lobbyPlayer.alive) return;
+
+    lobby.votes[socket.id] = targetId;
+
+    // Check if all alive players have voted
+    const alivePlayers = lobby.players.filter(p => p.alive);
+    const voteCount = Object.keys(lobby.votes).length;
+
+    io.to(lobby.code).emit('voteCast', {
+      voterId: socket.id,
+      targetId: targetId
+    });
+
+    if (voteCount === alivePlayers.length) {
+      resolveVotes(lobby);
+    }
+  });
+
+  // Night actions
+  socket.on('nightAction', (targetId) => {
+    const player = players[socket.id];
+    if (!player || !lobbies[player.lobbyCode]) return;
+
+    const lobby = lobbies[player.lobbyCode];
+    const lobbyPlayer = lobby.players.find(p => p.id === socket.id);
+
+    if (lobbyPlayer.role === 'mafia') {
+      lobby.mafiaTarget = targetId;
+    } else if (lobbyPlayer.role === 'doctor') {
+      lobby.doctorTarget = targetId;
+    } else if (lobbyPlayer.role === 'detective') {
+      lobby.detectiveTarget = targetId;
+      const target = lobby.players.find(p => p.id === targetId);
+      io.to(socket.id).emit('detectiveResult', {
+        targetId: targetId,
+        isMafia: target.role === 'mafia'
+      });
+    }
+
+    checkNightActionsComplete(lobby);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+    const player = players[socket.id];
+    
+    if (player && lobbies[player.lobbyCode]) {
+      const lobby = lobbies[player.lobbyCode];
+      lobby.players = lobby.players.filter(p => p.id !== socket.id);
+      delete players[socket.id];
+      
+      io.to(lobby.code).emit('playerLeft', { playerId: socket.id });
+      
+      // If host left and there are still players, assign new host
+      if (lobby.host === socket.id && lobby.players.length > 0) {
+        lobby.host = lobby.players[0].id;
+        io.to(lobby.code).emit('newHost', { hostId: lobby.host });
+      }
+
+      // If lobby is empty, delete it
+      if (lobby.players.length === 0) {
+        delete lobbies[lobby.code];
+      }
+    }
+  });
+});
+
+function joinLobby(socket, username, lobbyCode) {
+  const lobby = lobbies[lobbyCode];
   
-  return lobby;
+  const player = {
+    id: socket.id,
+    username: username,
+    lobbyCode: lobbyCode,
+    role: null,
+    alive: true,
+    ready: false
+  };
+
+  players[socket.id] = player;
+  lobby.players.push(player);
+
+  socket.join(lobbyCode);
+
+  // Send lobby state to the new player
+  io.to(socket.id).emit('lobbyState', {
+    lobby: lobby,
+    playerId: socket.id
+  });
+
+  // Notify other players
+  io.to(lobbyCode).emit('playerJoined', player);
+}
+
+function startGame(lobbyCode) {
+  const lobby = lobbies[lobbyCode];
+  if (!lobby) return;
+
+  // Assign roles
+  const shuffledRoles = shuffle([...ROLES]);
+  const extraVillagers = Array(lobby.players.length - 4).fill('villager');
+  const allRoles = shuffle([...shuffledRoles, ...extraVillagers]);
+
+  lobby.players.forEach((player, index) => {
+    player.role = allRoles[index];
+    io.to(player.id).emit('gameStarted', { role: player.role });
+  });
+
+  // Start night phase
+  lobby.phase = 'night';
+  lobby.dayCount = 0;
+
+  io.to(lobbyCode).emit('phaseChanged', { phase: 'night' });
+
+  // Notify night roles
+  const mafia = lobby.players.filter(p => p.role === 'mafia');
+  mafia.forEach(m => {
+    io.to(m.id).emit('nightPhase', {
+      role: 'mafia',
+      targets: lobby.players.filter(p => p.id !== m.id && p.alive)
+    });
+  });
+
+  const doctor = lobby.players.find(p => p.role === 'doctor');
+  if (doctor && doctor.alive) {
+    io.to(doctor.id).emit('nightPhase', {
+      role: 'doctor',
+      targets: lobby.players.filter(p => p.id !== doctor.id && p.alive)
+    });
+  }
+
+  const detective = lobby.players.find(p => p.role === 'detective');
+  if (detective && detective.alive) {
+    io.to(detective.id).emit('nightPhase', {
+      role: 'detective',
+      targets: lobby.players.filter(p => p.id !== detective.id && p.alive)
+    });
+  }
+}
+
+function checkNightActionsComplete(lobby) {
+  const mafia = lobby.players.filter(p => p.role === 'mafia' && p.alive);
+  const doctor = lobby.players.find(p => p.role === 'doctor' && p.alive);
+  const detective = lobby.players.find(p => p.role === 'detective' && p.alive);
+
+  const mafiaVoted = lobby.mafiaTarget !== null;
+  const doctorVoted = lobby.doctorTarget !== null || !doctor;
+  const detectiveVoted = lobby.detectiveTarget !== null || !detective;
+
+  if (mafiaVoted && doctorVoted && detectiveVoted) {
+    resolveNight(lobby);
+  }
+}
+
+function resolveNight(lobby) {
+  // Reset night actions
+  const target = lobby.mafiaTarget;
+  const saved = lobby.doctorTarget;
+  
+  let died = null;
+  if (target && target !== saved) {
+    const victim = lobby.players.find(p => p.id === target);
+    if (victim) {
+      victim.alive = false;
+      died = victim;
+    }
+  }
+
+  lobby.mafiaTarget = null;
+  lobby.doctorTarget = null;
+  lobby.detectiveTarget = null;
+
+  // Check win conditions
+  const mafiaCount = lobby.players.filter(p => p.role === 'mafia' && p.alive).length;
+  const villageCount = lobby.players.filter(p => p.role !== 'mafia' && p.alive).length;
+
+  if (mafiaCount === 0) {
+    endGame(lobby, 'village');
+    return;
+  } else if (mafiaCount >= villageCount) {
+    endGame(lobby, 'mafia');
+    return;
+  }
+
+  // Start day phase
+  lobby.phase = 'day';
+  lobby.dayCount++;
+  lobby.votes = {};
+
+  io.to(lobby.code).emit('phaseChanged', { 
+    phase: 'day',
+    died: died ? { id: died.id, username: died.username } : null
+  });
+
+  // Check win conditions again
+  checkWinCondition(lobby);
+}
+
+function resolveVotes(lobby) {
+  const voteCounts = {};
+  
+  // Count votes
+  Object.values(lobby.votes).forEach(targetId => {
+    voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+  });
+
+  // Find player with most votes
+  let maxVotes = 0;
+  let eliminated = null;
+  
+  Object.entries(voteCounts).forEach(([playerId, count]) => {
+    if (count > maxVotes) {
+      maxVotes = count;
+      eliminated = playerId;
+    }
+  });
+
+  // Eliminate player
+  if (eliminated) {
+    const player = lobby.players.find(p => p.id === eliminated);
+    if (player) {
+      player.alive = false;
+      io.to(lobby.code).emit('playerEliminated', {
+        playerId: eliminated,
+        username: player.username,
+        role: player.role
+      });
+    }
+  }
+
+  lobby.votes = {};
+
+  // Check win conditions
+  if (!checkWinCondition(lobby)) {
+    // Start night phase
+    lobby.phase = 'night';
+    io.to(lobby.code).emit('phaseChanged', { phase: 'night' });
+
+    // Notify night roles
+    const mafia = lobby.players.filter(p => p.role === 'mafia' && p.alive);
+    mafia.forEach(m => {
+      io.to(m.id).emit('nightPhase', {
+        role: 'mafia',
+        targets: lobby.players.filter(p => p.id !== m.id && p.alive)
+      });
+    });
+
+    const doctor = lobby.players.find(p => p.role === 'doctor' && p.alive);
+    if (doctor) {
+      io.to(doctor.id).emit('nightPhase', {
+        role: 'doctor',
+        targets: lobby.players.filter(p => p.id !== doctor.id && p.alive)
+      });
+    }
+
+    const detective = lobby.players.find(p => p.role === 'detective' && p.alive);
+    if (detective) {
+      io.to(detective.id).emit('nightPhase', {
+        role: 'detective',
+        targets: lobby.players.filter(p => p.id !== detective.id && p.alive)
+      });
+    }
+  }
 }
 
 function checkWinCondition(lobby) {
-  const alivePlayers = Object.values(lobby.players).filter(p => p.alive);
-  const aliveMafia = alivePlayers.filter(p => p.role === 'mafia').length;
-  const aliveVillagers = alivePlayers.filter(p => p.role !== 'mafia').length;
-  
-  if (aliveMafia === 0) {
-    return 'town';
-  } else if (aliveMafia >= aliveVillagers) {
-    return 'mafia';
+  const mafiaCount = lobby.players.filter(p => p.role === 'mafia' && p.alive).length;
+  const villageCount = lobby.players.filter(p => p.role !== 'mafia' && p.alive).length;
+
+  if (mafiaCount === 0) {
+    endGame(lobby, 'village');
+    return true;
+  } else if (mafiaCount >= villageCount) {
+    endGame(lobby, 'mafia');
+    return true;
   }
-  return null;
+
+  return false;
 }
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('Player connected:', socket.id);
+function endGame(lobby, winner) {
+  lobby.phase = 'ended';
   
-  // Create lobby
-  socket.on('createLobby', ({ name, maxPlayers }) => {
-    const lobbyCode = generateLobbyCode();
-    const lobby = {
-      code: lobbyCode,
-      host: socket.id,
-      name: name,
-      maxPlayers: maxPlayers || 10,
-      players: {},
-      phase: 'waiting',
-      dayCount: 0,
-      votes: {},
-      nightActions: {},
-      mafiaTarget: null,
-      doctorTarget: null,
-      started: false
-    };
-    
-    lobby.players[socket.id] = {
-      id: socket.id,
-      name: name,
-      ready: true,
-      role: null,
-      alive: true
-    };
-    
-    lobbies.set(lobbyCode, lobby);
-    socket.join(lobbyCode);
-    socket.emit('lobbyCreated', lobby);
-    io.to(lobbyCode).emit('lobbyUpdate', lobby);
-    
-    console.log(`Lobby created: ${lobbyCode}`);
+  io.to(lobby.code).emit('gameEnded', {
+    winner: winner,
+    players: lobby.players.map(p => ({
+      username: p.username,
+      role: p.role,
+      alive: p.alive
+    }))
   });
-  
-  // Join lobby
-  socket.on('joinLobby', ({ name, code }) => {
-    const lobby = lobbies.get(code.toUpperCase());
-    
-    if (!lobby) {
-      socket.emit('error', 'Lobby not found');
-      return;
-    }
-    
-    if (Object.keys(lobby.players).length >= lobby.maxPlayers) {
-      socket.emit('error', 'Lobby is full');
-      return;
-    }
-    
-    lobby.players[socket.id] = {
-      id: socket.id,
-      name: name,
-      ready: false,
-      role: null,
-      alive: true
-    };
-    
-    socket.join(code);
-    socket.emit('joinedLobby', lobby);
-    io.to(code).emit('lobbyUpdate', lobby);
-    
-    // Join message
-    io.to(code).emit('chatMessage', {
-      type: 'system',
-      message: `${name} joined the lobby`
-    });
-  });
-  
-  // Ready up
-  socket.on('toggleReady', () => {
-    let lobby = null;
-    let lobbyCode = null;
-    
-    lobbies.forEach((l, code) => {
-      if (l.players[socket.id]) {
-        lobby = l;
-        lobbyCode = code;
-      }
-    });
-    
-    if (lobby && !lobby.started) {
-      lobby.players[socket.id].ready = !lobby.players[socket.id].ready;
-      io.to(lobbyCode).emit('lobbyUpdate', lobby);
-    }
-  });
-  
-  // Start game
-  socket.on('startGame', () => {
-    let lobby = null;
-    let lobbyCode = null;
-    
-    lobbies.forEach((l, code) => {
-      if (l.host === socket.id) {
-        lobby = l;
-        lobbyCode = code;
-      }
-    });
-    
-    if (lobby && lobby.host === socket.id && !lobby.started) {
-      // Check if all players are ready
-      const allReady = Object.values(lobby.players).every(p => p.ready);
-      if (Object.keys(lobby.players).length >= 3 && allReady) {
-        assignRoles(lobby);
-        lobby.started = true;
-        lobby.phase = 'night';
-        lobby.dayCount = 1;
-        lobby.nightActions = {};
-        
-        io.to(lobbyCode).emit('gameStarted', lobby);
-        
-        // Send individual role info
-        Object.keys(lobby.players).forEach(id => {
-          const player = lobby.players[id];
-          io.to(id).emit('roleReveal', {
-            role: player.role,
-            players: lobby.players
-          });
-        });
-        
-        // Start night phase
-        setTimeout(() => {
-          io.to(lobbyCode).emit('phaseChange', { phase: 'night', dayCount: lobby.dayCount });
-        }, 2000);
-      }
-    }
-  });
-  
-  // Night actions
-  socket.on('nightAction', ({ targetId, action }) => {
-    let lobby = null;
-    let lobbyCode = null;
-    
-    lobbies.forEach((l, code) => {
-      if (l.players[socket.id]) {
-        lobby = l;
-        lobbyCode = code;
-      }
-    });
-    
-    if (lobby && lobby.phase === 'night') {
-      const player = lobby.players[socket.id];
-      
-      if (action === 'kill' && player.role === 'mafia' && player.alive) {
-        lobby.mafiaTarget = targetId;
-      } else if (action === 'heal' && player.role === 'doctor' && player.alive) {
-        lobby.doctorTarget = targetId;
-      } else if (action === 'investigate' && player.role === 'detective' && player.alive) {
-        const target = lobby.players[targetId];
-        const isMafia = target.role === 'mafia';
-        io.to(socket.id).emit('investigationResult', { targetId, isMafia });
-      }
-      
-      // Check if all night actions are done
-      const alivePlayers = Object.values(lobby.players).filter(p => p.alive);
-      const aliveMafia = alivePlayers.filter(p => p.role === 'mafia');
-      const aliveDoctor = alivePlayers.find(p => p.role === 'doctor');
-      const aliveDetective = alivePlayers.find(p => p.role === 'detective');
-      
-      let actionsComplete = lobby.mafiaTarget !== null;
-      if (aliveDoctor) actionsComplete = actionsComplete && lobby.doctorTarget !== null;
-      
-      if (actionsComplete) {
-        // Resolve night
-        setTimeout(() => {
-          let deaths = [];
-          
-          if (lobby.mafiaTarget && lobby.mafiaTarget !== lobby.doctorTarget) {
-            const victim = lobby.players[lobby.mafiaTarget];
-            if (victim) {
-              victim.alive = false;
-              deaths.push(victim.name);
-            }
-          }
-          
-          // Reset night actions
-          lobby.mafiaTarget = null;
-          lobby.doctorTarget = null;
-          
-          // Change to day phase
-          lobby.phase = 'day';
-          lobby.votes = {};
-          
-          io.to(lobbyCode).emit('nightResult', { deaths });
-          io.to(lobbyCode).emit('phaseChange', { phase: 'day', dayCount: lobby.dayCount });
-          io.to(lobbyCode).emit('lobbyUpdate', lobby);
-          
-          // Check win condition
-          const winner = checkWinCondition(lobby);
-          if (winner) {
-            io.to(lobbyCode).emit('gameOver', { winner, players: lobby.players });
-          }
-        }, 1000);
-      }
-    }
-  });
-  
-  // Vote during day
-  socket.on('vote', ({ targetId }) => {
-    let lobby = null;
-    let lobbyCode = null;
-    
-    lobbies.forEach((l, code) => {
-      if (l.players[socket.id]) {
-        lobby = l;
-        lobbyCode = code;
-      }
-    });
-    
-    if (lobby && lobby.phase === 'day' && lobby.players[socket.id].alive) {
-      lobby.votes[socket.id] = targetId;
-      
-      // Count votes
-      const voteCounts = {};
-      Object.values(lobby.votes).forEach(target => {
-        voteCounts[target] = (voteCounts[target] || 0) + 1;
-      });
-      
-      const alivePlayers = Object.values(lobby.players).filter(p => p.alive);
-      const totalVotes = Object.keys(lobby.votes).length;
-      
-      io.to(lobbyCode).emit('voteUpdate', { votes: lobby.votes, voteCounts });
-      
-      // Check if all players voted
-      if (totalVotes >= alivePlayers.length) {
-        // Find player with most votes
-        let maxVotes = 0;
-        let eliminated = null;
-        let tie = false;
-        
-        Object.entries(voteCounts).forEach(([id, count]) => {
-          if (count > maxVotes) {
-            maxVotes = count;
-            eliminated = id;
-            tie = false;
-          } else if (count === maxVotes) {
-            tie = true;
-          }
-        });
-        
-        if (eliminated && !tie) {
-          lobby.players[eliminated].alive = false;
-          io.to(lobbyCode).emit('playerEliminated', { 
-            player: lobby.players[eliminated].name,
-            role: lobby.players[eliminated].role
-          });
-        } else {
-          io.to(lobbyCode).emit('noElimination');
-        }
-        
-        // Check win condition
-        const winner = checkWinCondition(lobby);
-        if (winner) {
-          io.to(lobbyCode).emit('gameOver', { winner, players: lobby.players });
-          return;
-        }
-        
-        // Move to night
-        setTimeout(() => {
-          lobby.phase = 'night';
-          lobby.dayCount++;
-          lobby.votes = {};
-          lobby.mafiaTarget = null;
-          lobby.doctorTarget = null;
-          
-          io.to(lobbyCode).emit('phaseChange', { phase: 'night', dayCount: lobby.dayCount });
-          io.to(lobbyCode).emit('lobbyUpdate', lobby);
-        }, 3000);
-      }
-    }
-  });
-  
-  // Skip vote
-  socket.on('skipVote', () => {
-    let lobby = null;
-    let lobbyCode = null;
-    
-    lobbies.forEach((l, code) => {
-      if (l.players[socket.id]) {
-        lobby = l;
-        lobbyCode = code;
-      }
-    });
-    
-    if (lobby && lobby.phase === 'day' && lobby.players[socket.id].alive) {
-      lobby.votes[socket.id] = null;
-      
-      const voteCounts = {};
-      Object.values(lobby.votes).forEach(target => {
-        if (target) {
-          voteCounts[target] = (voteCounts[target] || 0) + 1;
-        }
-      });
-      
-      const alivePlayers = Object.values(lobby.players).filter(p => p.alive);
-      const totalVotes = Object.keys(lobby.votes).length;
-      
-      io.to(lobbyCode).emit('voteUpdate', { votes: lobby.votes, voteCounts });
-      
-      if (totalVotes >= alivePlayers.length) {
-        setTimeout(() => {
-          lobby.phase = 'night';
-          lobby.dayCount++;
-          lobby.votes = {};
-          lobby.mafiaTarget = null;
-          lobby.doctorTarget = null;
-          
-          io.to(lobbyCode).emit('phaseChange', { phase: 'night', dayCount: lobby.dayCount });
-          io.to(lobbyCode).emit('lobbyUpdate', lobby);
-        }, 3000);
-      }
-    }
-  });
-  
-  // Chat messages
-  socket.on('chatMessage', ({ message }) => {
-    let lobby = null;
-    let lobbyCode = null;
-    
-    lobbies.forEach((l, code) => {
-      if (l.players[socket.id]) {
-        lobby = l;
-        lobbyCode = code;
-      }
-    });
-    
-    if (lobby) {
-      const player = lobby.players[socket.id];
-      
-      // Mafia can chat with other mafia at night
-      if (lobby.phase === 'night' && player.role === 'mafia') {
-        io.to(lobbyCode).emit('chatMessage', {
-          type: 'mafia',
-          name: player.name,
-          message: message
-        });
-      } 
-      // Everyone can chat during day
-      else if (lobby.phase === 'day') {
-        io.to(lobbyCode).emit('chatMessage', {
-          type: 'public',
-          name: player.name,
-          message: message
-        });
-      }
-    }
-  });
-  
-  // Disconnect
-  socket.on('disconnect', () => {
-    console.log('Player disconnected:', socket.id);
-    
-    let removedLobbyCode = null;
-    
-    lobbies.forEach((lobby, code) => {
-      if (lobby.players[socket.id]) {
-        const playerName = lobby.players[socket.id].name;
-        delete lobby.players[socket.id];
-        
-        io.to(code).emit('chatMessage', {
-          type: 'system',
-          message: `${playerName} left the lobby`
-        });
-        
-        io.to(code).emit('lobbyUpdate', lobby);
-        
-        // If host left, transfer to next player
-        if (lobby.host === socket.id && Object.keys(lobby.players).length > 0) {
-          const newHost = Object.keys(lobby.players)[0];
-          lobby.host = newHost;
-          io.to(code).emit('hostChange', { newHost: lobby.players[newHost].name });
-          io.to(code).emit('lobbyUpdate', lobby);
-        }
-        
-        // Remove empty lobbies
-        if (Object.keys(lobby.players).length === 0) {
-          removedLobbyCode = code;
-        }
-      }
-    });
-    
-    if (removedLobbyCode) {
-      lobbies.delete(removedLobbyCode);
-      console.log(`Lobby removed: ${removedLobbyCode}`);
-    }
-  });
-});
+}
 
-// Get public lobbies
-app.get('/api/lobbies', (req, res) => {
-  const publicLobbies = [];
-  lobbies.forEach((lobby, code) => {
-    if (!lobby.started && Object.keys(lobby.players).length < lobby.maxPlayers) {
-      publicLobbies.push({
-        code: code,
-        name: lobby.name,
-        players: Object.keys(lobby.players).length,
-        maxPlayers: lobby.maxPlayers
-      });
-    }
-  });
-  res.json(publicLobbies);
-});
-
-const PORT = process.env.PORT || 3000;
+// Start server
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Mafia.io server running on port ${PORT}`);
 });
